@@ -14,14 +14,13 @@
         }
     ],
     "require": {
-        "php": ">=7.1.0",
+
         "ext-openssl": "*",
         "ext-simplexml":"*",
         "ext-libxml": "*",
         "ext-json": "*",
         "ext-curl": "*",
-        "ext-redis": "*",
-        "ext-bcmath": "*"
+        "ext-redis": "*"
     },
     "require-dev": {
     },
