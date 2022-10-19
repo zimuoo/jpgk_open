@@ -24,7 +24,6 @@
         "ext-bcmath": "*"
     },
     "require-dev": {
-
     },
     "extra": {
         "think":{
