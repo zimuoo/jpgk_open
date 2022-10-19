@@ -1,0 +1,17 @@
+{
+    "name": "zimuoo/jpgkopen",
+    "description": "京品高科开放平台php对接SDK包",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Zimuoo\\Jpgkopen\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "zimuoo",
+            "email": "weigo521@163.com"
+        }
+    ],
+    "require": {}
+}
