@@ -12,7 +12,7 @@ class Client
     protected $appid;
     protected $key;
     protected $config;
-    protected $apiHost;
+    protected $apiHost='open.jpgkcloud.com';
 
     public function __construct(array $config = [])
     {
@@ -20,7 +20,6 @@ class Client
         $this->redis=$this->connect();
         $this->appid=$config['APPID'];
         $this->key=$config['KEY'];
-        $this->apiHost=$config['APIHOST'];
         $this->getToken();
     }
     public function connect()
