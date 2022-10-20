@@ -13,7 +13,6 @@ class Client
     protected $key;
     protected $config;
     protected $apiHost='open.jpgkcloud.com';
-
     public function __construct(array $config = [])
     {
         $this->config=$config;
