@@ -14,7 +14,7 @@
         }
     ],
     "require": {
-
+        "php": ">=7.1.0",
         "ext-openssl": "*",
         "ext-simplexml":"*",
         "ext-libxml": "*",
