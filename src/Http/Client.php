@@ -11,18 +11,22 @@ class Client
     protected $redis;
     protected $appid;
     protected $key;
-    
+    protected $config;
+    protected $apiHost;
+
     public function __construct(array $config = [])
     {
-        $redisConfig=$config['REDIS'];
-        $this->redis=$this->connect($redisConfig);
+        $this->config=$config;
+        $this->redis=$this->connect();
         $this->appid=$config['APPID'];
         $this->key=$config['KEY'];
+        $this->apiHost=$config['APIHOST'];
         $this->getToekn();
     }
-    public function connect(array $redisConfig)
+    public function connect()
     {
         $connection = new \Redis();
+        $redisConfig= ($this->config)['REDIS'];
         $ret = $connection->connect($redisConfig['host'], $redisConfig['port']);
         if ($ret === false) {
             throw new \RuntimeException(sprintf('Failed to connect Redis server: [%s] %s', $connection->errCode, $connection->errMsg));
@@ -75,12 +79,9 @@ class Client
     }
     protected function getToekn()
     {
-        $url='http://'.Config::API_HOST.'/api/getToken.jpgk';
-
-        $request = new Request('GET', $url, [],['appid'=>Config::APPID,'key'=>Config::KEY]);
-
+        $url='http://'.$this->apiHost.'/api/getToken.jpgk';
+        $request = new Request('GET', $url, [],['appid'=>$this->appid,'key'=>$this->key]);
         $tokenResponse=self::sendRequest($request);
-
        // $this->needHeader=[]; //设置请求header
         var_dump($tokenResponse);
     }
