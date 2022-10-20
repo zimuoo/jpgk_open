@@ -4,7 +4,7 @@
 namespace Zimuoo\Jpgkopen\Http;
 
 
-final class Response
+class Response
 {
     public $statusCode;
     /**

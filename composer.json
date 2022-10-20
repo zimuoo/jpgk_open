@@ -20,7 +20,8 @@
         "ext-libxml": "*",
         "ext-json": "*",
         "ext-curl": "*",
-        "ext-redis": "*"
+        "ext-redis": "*",
+        "ext-http": "*"
     },
     "require-dev": {
     },

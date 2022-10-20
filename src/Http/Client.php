@@ -2,36 +2,39 @@
 
 
 namespace Zimuoo\Jpgkopen\Http;
-use Zimuoo\Jpgkopen\Config;
 use Zimuoo\Jpgkopen\Http\Request;
-use Zimuoo\Jpgkopen\Http\Response;
 
 class Client
 {
     protected $needHeader;
     protected $redisClient;
     protected $redis;
-    public function __construct()
+    protected $appid;
+    protected $key;
+    
+    public function __construct(array $config = [])
     {
-        $redisConfig=Config::REDIS;
+        $redisConfig=$config['REDIS'];
         $this->redis=$this->connect($redisConfig);
+        $this->appid=$config['APPID'];
+        $this->key=$config['KEY'];
         $this->getToekn();
     }
-    public function connect(array $config)
+    public function connect(array $redisConfig)
     {
         $connection = new \Redis();
-        $ret = $connection->connect($config['host'], $config['port']);
+        $ret = $connection->connect($redisConfig['host'], $redisConfig['port']);
         if ($ret === false) {
             throw new \RuntimeException(sprintf('Failed to connect Redis server: [%s] %s', $connection->errCode, $connection->errMsg));
         }
-        if (isset($config['password'])) {
-            $config['password'] = (string)$config['password'];
-            if ($config['password'] !== '') {
-                $connection->auth($config['password']);
+        if (isset($redisConfig['password'])) {
+            $redisConfig['password'] = (string)$redisConfig['password'];
+            if ($redisConfig['password'] !== '') {
+                $connection->auth($redisConfig['password']);
             }
         }
-        if (isset($config['select'])) {
-            $connection->select($config['select']);
+        if (isset($redisConfig['select'])) {
+            $connection->select($redisConfig['select']);
         }
         return $connection;
     }

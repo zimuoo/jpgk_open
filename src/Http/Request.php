@@ -2,9 +2,7 @@
 
 
 namespace Zimuoo\Jpgkopen\Http;
-use Zimuoo\Jpgkopen\Config;
-
-final class Request
+ class Request
 {
     public $url;
     public $headers;
