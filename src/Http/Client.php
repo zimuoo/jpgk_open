@@ -21,7 +21,7 @@ class Client
         $this->appid=$config['APPID'];
         $this->key=$config['KEY'];
         $this->apiHost=$config['APIHOST'];
-        $this->getToekn();
+        $this->getToken();
     }
     public function connect()
     {
@@ -77,7 +77,7 @@ class Client
         $ua = "$envInfo PHP/$phpVer";
         return $ua;
     }
-    protected function getToekn()
+    protected function getToken()
     {
         $url='http://'.$this->apiHost.'/api/getToken.jpgk';
         $request = new Request('GET', $url, [],['appid'=>$this->appid,'key'=>$this->key]);
