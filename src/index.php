@@ -1,8 +1,5 @@
 <?php
-
-
 namespace Zimuoo\Jpgkopen;
-
 
 class index
 {
