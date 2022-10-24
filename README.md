@@ -4,7 +4,7 @@
 
 #### 安装
 ```angular2html
-composer require zimuoo/jpgkopen:^1.1.4
+composer require zimuoo/jpgkopen:^2.0.1
 ```
 
 
