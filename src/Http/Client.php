@@ -109,7 +109,6 @@ class Client
             $duration = round($t2 - $t1, 3);
             $ret = curl_errno($ch);
             if ($ret !== 0) {
-
             }
             $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
