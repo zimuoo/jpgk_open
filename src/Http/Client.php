@@ -25,11 +25,13 @@ class Client
     }
     public static function get($url, $body = null)
     {
+        if(empty($url))return ['code'=>400,'message'=>'API地址不能为空'];
         $request = new Request('GET', $url,$body);
         return self::sendRequest($request);
     }
     public static function post($url, $body=null)
     {
+        if(empty($url))return ['code'=>400,'message'=>'API地址不能为空'];
         $request = new Request('POST', $url,$body);
         return self::sendRequest($request);
     }
