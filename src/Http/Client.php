@@ -3,87 +3,67 @@
 
 namespace Zimuoo\Jpgkopen\Http;
 use Zimuoo\Jpgkopen\Http\Request;
-
+use Zimuoo\Jpgkopen\Http\Response;
 class Client
 {
     protected $needHeader;
     protected $redisClient;
-    protected $redis;
+    protected $RedisClient;
     protected $appid;
     protected $key;
     protected $config;
-    protected $apiHost='open.jpgkcloud.com';
+    protected $error;
     public function __construct(array $config = [])
     {
         $this->config=$config;
-        $this->redis=$this->connect();
         $this->appid=$config['APPID'];
         $this->key=$config['KEY'];
+        $redisConfig=($this->config)['REDIS'];
+        $GLOBALS['redisConfig']=$redisConfig;
+        $this->RedisClient=Redis::connect($redisConfig);
         $this->getToken();
     }
-    public function connect()
+    public static function get($url, $body = null)
     {
-        $connection = new \Redis();
-        $redisConfig= ($this->config)['REDIS'];
-        $ret = $connection->connect($redisConfig['host'], $redisConfig['port']);
-        if ($ret === false) {
-            throw new \RuntimeException(sprintf('Failed to connect Redis server: [%s] %s', $connection->errCode, $connection->errMsg));
-        }
-        if (isset($redisConfig['password'])) {
-            $redisConfig['password'] = (string)$redisConfig['password'];
-            if ($redisConfig['password'] !== '') {
-                $connection->auth($redisConfig['password']);
-            }
-        }
-        if (isset($redisConfig['select'])) {
-            $connection->select($redisConfig['select']);
-        }
-        return $connection;
-    }
-
-    public static function get($url, array $headers = array())
-    {
-        $request = new Request('GET', $url, $headers);
+        $request = new Request('GET', $url,$body);
         return self::sendRequest($request);
     }
-
-    public static function delete($url, array $headers = array())
+    public static function post($url, $body=null)
     {
-        $request = new Request('DELETE', $url, $headers);
-        return self::sendRequest($request);
-    }
-
-    public static function post($url, $body, array $headers = array())
-    {
-        $request = new Request('POST', $url, $headers, $body);
-        return self::sendRequest($request);
-    }
-
-    public static function PUT($url, $body, array $headers = array())
-    {
-        $request = new Request('PUT', $url, $headers, $body);
+        $request = new Request('POST', $url,$body);
         return self::sendRequest($request);
     }
     private static function userAgent()
     {
-
         $systemInfo = php_uname("s");
         $machineInfo = php_uname("m");
         $envInfo = "($systemInfo/$machineInfo)";
         $phpVer = phpversion();
-
         $ua = "$envInfo PHP/$phpVer";
         return $ua;
     }
     protected function getToken()
     {
-        $url='http://'.$this->apiHost.'/api/getToken.jpgk';
-        $request = new Request('GET', $url, [],['appid'=>$this->appid,'key'=>$this->key]);
-        $tokenResponse=self::sendRequest($request);
-       // $this->needHeader=[]; //设置请求header
-        var_dump($tokenResponse);
+        try {
+            $token=$this->RedisClient->get('requestToken');
+            if(!$token){
+                $url='/api/getToken.jpgk';
+                $request = new Request('GET', $url,['appid'=>$this->appid,'key'=>$this->key]);
+                $tokenResponse=self::sendRequest($request);
+                if($tokenResponse['code']==1001 && isset($tokenResponse['data']['token'])){
+                    $token=$tokenResponse['data']['token'];
+                    $this->RedisClient->set('requestToken',$token,7200);
+                }else{
+                    return $tokenResponse;
+                    die;
+                }
+            }
+        }catch (\Exception $e){
+            return ['code'=>'JP404','message'=>$e->getMessage()];
+        }
+
     }
-    public static function sendRequest($request)
+    protected static function sendRequest($request)
     {
         $t1 = microtime(true);
         $ch = curl_init();
@@ -97,36 +77,48 @@ class Client
             CURLOPT_CUSTOMREQUEST => $request->method,
             CURLOPT_URL => $request->url,
         );
+        if (!empty($request->body)) {
+            $options[CURLOPT_POSTFIELDS] =is_array($request->body)? http_build_query($request->body):$request->body;
+        }
+
+        if($request->method=='GET'){
+            $request->url .= '?'.$options[CURLOPT_POSTFIELDS];
+            $options[CURLOPT_URL]=$request->url;
+        }
         // Handle open_basedir & safe mode
         if (!ini_get('safe_mode') && !ini_get('open_basedir')) {
             $options[CURLOPT_FOLLOWLOCATION] = true;
         }
-        if (!empty($request->headers)) {
-            $headers = array();
-            foreach ($request->headers as $key => $val) {
-                array_push($headers, "$key: $val");
+        $headers = array("Content-type:application/json;","Accept:application/json");
+        if(!empty($GLOBALS['redisConfig'])){
+            $redis=Redis::connect($GLOBALS['redisConfig']);
+            $token=$redis->get('requestToken');
+            if($token){
+                $headerToken=array("Authorization:bearer {$token};");
+                foreach ($headerToken as $key => $val) {
+                    array_push($headers, "$val");
+                }
             }
-            $options[CURLOPT_HTTPHEADER] = $headers;
         }
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Expect:'));
-        if (!empty($request->body)) {
-            $options[CURLOPT_POSTFIELDS] = $request->body;
-        }
-        curl_setopt_array($ch, $options);
-        $result = curl_exec($ch);
-        $t2 = microtime(true);
-        $duration = round($t2 - $t1, 3);
-        $ret = curl_errno($ch);
-        if ($ret !== 0) {
-            $r = new Response(-1, $duration, array(), null, curl_error($ch));
+        $options[CURLOPT_HTTPHEADER] = $headers;
+        try{
+            curl_setopt($ch, CURLOPT_HTTPHEADER, array('Expect:'));
+            curl_setopt_array($ch, $options);
+            $result = curl_exec($ch);
+            $t2 = microtime(true);
+            $duration = round($t2 - $t1, 3);
+            $ret = curl_errno($ch);
+            if ($ret !== 0) {
+
+            }
+            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+            $headers = Header::parseRawText(substr($result, 0, $header_size));
+            $body = substr($result, $header_size);
             curl_close($ch);
-            return $r;
+            return (new Response($code,$headers,$body))->parse();
+        }catch (\Exception $e){
+            return ['code'=>'JP404','message'=>$e->getMessage()];
         }
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-        $headers = Header::parseRawText(substr($result, 0, $header_size));
-        $body = substr($result, $header_size);
-        curl_close($ch);
-        return new Response($code, $duration, $headers, $body, null);
     }
 }
